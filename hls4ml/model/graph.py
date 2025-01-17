@@ -6,7 +6,7 @@ from collections import OrderedDict
 import numpy as np
 import numpy.ctypeslib as npc
 
-from hls4ml.backends import get_backend
+from hls4ml.backends.backend import get_backend
 from hls4ml.model.flow import get_flow
 from hls4ml.model.layers import layer_map
 from hls4ml.model.optimizer import get_available_passes, optimize_model

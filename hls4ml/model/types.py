@@ -9,7 +9,7 @@ from enum import Enum
 
 import numpy as np
 import tensorflow as tf
-from qkeras.quantizers import get_quantizer
+from hepinfo.models.qkerasV3 import get_quantizer
 
 # region Quantizer definition
 

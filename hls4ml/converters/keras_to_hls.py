@@ -250,6 +250,8 @@ def parse_keras_model(model_arch, reader):
 
     print('Topology:')
     for keras_layer in layer_config:
+        if 'batch_shape' in keras_layer['config']:
+            keras_layer['config']['batch_input_shape'] = keras_layer['config']['batch_shape']
         if 'batch_input_shape' in keras_layer['config']:
             if 'inbound_nodes' in keras_layer and len(keras_layer['inbound_nodes']) > 0:
                 input_shapes = [output_shapes[inbound_node[0]] for inbound_node in keras_layer['inbound_nodes'][0]]
@@ -257,7 +259,10 @@ def parse_keras_model(model_arch, reader):
                 input_shapes = [keras_layer['config']['batch_input_shape']]
         else:
             if 'inbound_nodes' in keras_layer:
-                input_shapes = [output_shapes[inbound_node[0]] for inbound_node in keras_layer['inbound_nodes'][0]]
+                if "build_config" in keras_layer:
+                    input_shapes = [keras_layer["build_config"]['input_shape']]
+                else:
+                    input_shapes = [output_shapes[inbound_node[0]] for inbound_node in keras_layer['inbound_nodes'][0]]
             else:
                 # Sequential model, so output_shape from the previous layer is still valid
                 input_shapes = [output_shape]
@@ -283,6 +288,9 @@ def parse_keras_model(model_arch, reader):
         if 'inbound_nodes' in keras_layer and len(keras_layer['inbound_nodes']) > 0:
             input_names = [inputs_map.get(inp[0], inp[0]) for inp in keras_layer['inbound_nodes'][0]]
         else:
+            input_names = None
+
+        if keras_class == "QDense" or keras_class == "QActivation" or "BernoulliSampling":
             input_names = None
 
         layer, output_shape = layer_handlers[keras_class](keras_layer, input_names, input_shapes, reader)
