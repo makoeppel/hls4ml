@@ -5,6 +5,7 @@ behave like simple wrappers.
 """
 
 import numpy as np
+import tensorflow as tf
 
 from hls4ml.model.types import (
     ExponentPrecisionType,
@@ -170,7 +171,7 @@ class QKerasBinaryQuantizer(Quantizer):
     def __call__(self, data):
         data = np.array(data, dtype='float32')
         y = self.quantizer_fn(data)
-        if hasattr(y, 'numpy'):
+        if isinstance(y, tf.Variable):
             y = y.numpy()
         return self.binary_quantizer(y)
 

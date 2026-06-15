@@ -7,7 +7,7 @@ from .utils import set_default_config
 
 
 class QKerasQActivationHandler(KerasV3LayerHandler):
-    handles = ('qkeras.qlayers.QActivation', 'QActivation')
+    handles = ('qkeras.qlayers.QActivation',)
 
     def handle(
         self,
