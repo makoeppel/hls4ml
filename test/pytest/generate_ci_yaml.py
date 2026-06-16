@@ -21,6 +21,13 @@ pytest.{}:
     RUN_SYNTHESIS: "true"
 """
 
+template_keras3_backend = (
+    template
+    + """
+    KERAS_BACKEND: {}
+"""
+)
+
 n_test_files_per_yml = int(os.environ.get('N_TESTS_PER_YAML', 4))
 
 # Blacklisted tests will be skipped
@@ -37,6 +44,10 @@ KERAS3_LIST = {
     'test_keras_v3_profiling',
 }
 QKERAS3_LIST = {'test_qkerasV3'}
+KERAS3_BACKEND_SPECIFIC_LIST = {
+    'test_pquant_keras': 'tensorflow',
+    'test_pquant_pytorch': 'torch',
+}
 
 # Test files to split by individual test cases
 # Value = chunk size per CI job
@@ -80,7 +91,10 @@ def generate_test_yaml(test_root='.'):
     test_paths = [
         path
         for path in test_root.glob('**/test_*.py')
-        if path.stem not in (BLACKLIST | LONGLIST | set(SPLIT_BY_TEST_CASE.keys()) | KERAS3_LIST | QKERAS3_LIST)
+        if path.stem
+        not in (
+            BLACKLIST | LONGLIST | set(SPLIT_BY_TEST_CASE.keys()) | KERAS3_LIST | set(KERAS3_BACKEND_SPECIFIC_LIST.keys() | QKERAS3_LIST)
+        )
     ]
     need_example_models = [uses_example_model(path) for path in test_paths]
 
@@ -154,6 +168,17 @@ def generate_test_yaml(test_root='.'):
         test_files = ' '.join([str(path.relative_to(test_root)) for path in batch_paths])
         batch_need_example_model = int(any([qkeras3_need_examples[i] for i in batch_idxs]))
         diff_yml = yaml.safe_load(template.format(name, '.pytest-qkeras-v3-only', test_files, batch_need_example_model))
+        yml.update(diff_yml)
+ 
+    backend_specific_paths = [path for path in test_root.glob('**/test_*.py') if path.stem in KERAS3_BACKEND_SPECIFIC_LIST]
+    for path in backend_specific_paths:
+        name = path.stem.replace('test_', '')
+        test_file = str(path.relative_to(test_root))
+        needs_examples = uses_example_model(path)
+        backend = KERAS3_BACKEND_SPECIFIC_LIST[path.stem]
+        diff_yml = yaml.safe_load(
+            template_keras3_backend.format(name, '.pytest-keras3-only', test_file, int(needs_examples), backend)
+        )
         yml.update(diff_yml)
 
     return yml
