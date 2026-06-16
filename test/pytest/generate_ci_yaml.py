@@ -93,7 +93,11 @@ def generate_test_yaml(test_root='.'):
         for path in test_root.glob('**/test_*.py')
         if path.stem
         not in (
-            BLACKLIST | LONGLIST | set(SPLIT_BY_TEST_CASE.keys()) | KERAS3_LIST | set(KERAS3_BACKEND_SPECIFIC_LIST.keys() | QKERAS3_LIST)
+            BLACKLIST
+            | LONGLIST
+            | set(SPLIT_BY_TEST_CASE.keys())
+            | KERAS3_LIST
+            | set(KERAS3_BACKEND_SPECIFIC_LIST.keys() | QKERAS3_LIST)
         )
     ]
     need_example_models = [uses_example_model(path) for path in test_paths]
@@ -169,7 +173,7 @@ def generate_test_yaml(test_root='.'):
         batch_need_example_model = int(any([qkeras3_need_examples[i] for i in batch_idxs]))
         diff_yml = yaml.safe_load(template.format(name, '.pytest-qkeras-v3-only', test_files, batch_need_example_model))
         yml.update(diff_yml)
- 
+
     backend_specific_paths = [path for path in test_root.glob('**/test_*.py') if path.stem in KERAS3_BACKEND_SPECIFIC_LIST]
     for path in backend_specific_paths:
         name = path.stem.replace('test_', '')
