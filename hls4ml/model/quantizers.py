@@ -4,6 +4,8 @@ provided data. The quantization function may be defined locally or taken from a 
 behave like simple wrappers.
 """
 
+import os
+
 import numpy as np
 
 from hls4ml.model.types import (
@@ -126,6 +128,10 @@ class QKerasQuantizer(Quantizer):
 
     def __call__(self, data):
         data = np.array(data, dtype='float32')
+        if os.environ['KERAS_BACKEND'] == 'jax' or os.environ['KERAS_BACKEND'] == 'torch':
+            import keras
+
+            return keras.ops.convert_to_numpy(self.quantizer_fn(data))
         return self.quantizer_fn(data).numpy()
 
     def _get_type(self, quantizer_config):
@@ -168,12 +174,13 @@ class QKerasBinaryQuantizer(Quantizer):
         self.binary_quantizer = BinaryQuantizer(1) if xnor else BinaryQuantizer(2)
 
     def __call__(self, data):
-        import tensorflow as tf
-
         data = np.array(data, dtype='float32')
         y = self.quantizer_fn(data)
-        if isinstance(y, tf.Variable):
-            y = y.numpy()
+        if os.environ['KERAS_BACKEND'] == 'tensorflow':
+            import tensorflow as tf
+
+            if isinstance(y, tf.Variable):
+                y = y.numpy()
         return self.binary_quantizer(y)
 
     def serialize_state(self):
@@ -200,8 +207,11 @@ class QKerasPO2Quantizer(Quantizer):
         # Weights are quantized to nearest power of two
         data = np.array(data, dtype='float32')
         y = self.quantizer_fn(data)
-        if hasattr(y, 'numpy'):
-            y = y.numpy()
+        if os.environ['KERAS_BACKEND'] == 'tensorflow':
+            import tensorflow as tf
+
+            if isinstance(y, tf.Variable):
+                y = y.numpy()
         return y
 
     def serialize_state(self):

@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from hls4ml.model.layers import ApplyAlpha
@@ -120,7 +122,12 @@ class QKerasFactorizeAlpha(OptimizerPass):
         if isinstance(quantizer.scale, (int, float)):
             scale = np.ones(shape=node.get_output_variable().shape[-1]) * quantizer.scale
         else:
-            scale = quantizer.scale.numpy()
+            if os.environ['KERAS_BACKEND'] == 'jax' or os.environ['KERAS_BACKEND'] == 'torch':
+                import keras
+
+                scale = keras.ops.convert_to_numpy(quantizer.scale)
+            else:
+                scale = quantizer.scale.numpy()
         unscale = 1.0 / scale
 
         new_weights = unscale * qweights  # use the quantized weights for safety
@@ -133,7 +140,13 @@ class QKerasFactorizeAlpha(OptimizerPass):
 
         # update the weights also applying the hls4ml quantizer
         # this is only needed for the binary layers which encode -1 as 0
-        quantized_new_weights = node.weights['weight'].quantizer(new_weights.numpy())
+        if os.environ['KERAS_BACKEND'] == 'jax' or os.environ['KERAS_BACKEND'] == 'torch':
+            import keras
+
+            new_weights_numpy = keras.ops.convert_to_numpy(new_weights)
+        else:
+            new_weights_numpy = new_weights.numpy()
+        quantized_new_weights = node.weights['weight'].quantizer(new_weights_numpy)
         node.weights['weight'].data = quantized_new_weights
 
         # Move the biases from the Dense layer to the ApplyAlpha layer

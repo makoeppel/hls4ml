@@ -805,7 +805,7 @@ def test_qseparableconv1d(test_case_id, backend, io_type):
 
     data = np.random.rand(100, 13, 20)
     input_quantizer = quantized_bits(8, 0, alpha=1)
-    dataq = input_quantizer(data).numpy()
+    dataq = keras.ops.convert_to_numpy(input_quantizer(data))
 
     y_qkeras = model.predict(dataq)
     y_hls4ml = hls_model.predict(dataq)
@@ -851,7 +851,7 @@ def test_qseparableconv2d(test_case_id, backend, io_type):
 
     data = np.random.rand(100, 13, 21, 20)
     input_quantizer = quantized_bits(8, 0, alpha=1)
-    dataq = input_quantizer(data).numpy()
+    dataq = keras.ops.convert_to_numpy(input_quantizer(data))
 
     y_qkeras = model.predict(dataq)
     y_hls4ml = hls_model.predict(dataq)
